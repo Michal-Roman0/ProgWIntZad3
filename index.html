@@ -33,9 +33,7 @@
 	}
 	function dragend_handler(ev){
 		console.log("dragend");
-		//usuwanie informacji o przenoszonym obiekcie
-		//ev.dataTransfer.clearData();
-		//removeDroppable(document.querySelectorAll('li'));
+		removeDroppable(document.querySelectorAll('li'));
 		setDroppable(document.querySelectorAll('li'));
 		setDraggable(document.querySelectorAll('li'));
 		
