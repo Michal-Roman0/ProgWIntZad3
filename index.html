@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="style.css">
+    <title>Sliding Tile Puzzle</title>
+	<script>
+	function dragstart_handler(ev){
+		ev.dataTransfer.setData("text/plain",ev.target.id);
+		ev.dataTransfer.dropEffect = "move";
+		console.log("Drag start");
+	}
+	function dragover_handler(ev){
+		ev.preventDefault();
+	}
+	function drop_handler(ev){
+		console.log("dropped");
+		ev.preventDefault();
+		const data = ev.dataTransfer.getData("text/plain");
+		ev.target.innerText = document.getElementById(data).innerText;
+		//usuwanie klasy wizualnie pokazującej wolny kafelek
+		ev.target.classList.remove("empty");
+		//blokowanie stawiania w to samo miejsce
+		ev.target.setAttribute("ondrop","");
+		ev.target.setAttribute("ondragover","");
+		
+		document.getElementById(data).innerText="";
+		
+		state = getState1(ul);
+	}
+	function dragend_handler(ev){
+		console.log("dragend");
+		//usuwanie informacji o przenoszonym obiekcie
+		//ev.dataTransfer.clearData();
+		//removeDroppable(document.querySelectorAll('li'));
+		setDroppable(document.querySelectorAll('li'));
+		setDraggable(document.querySelectorAll('li'));
+		
+		//jesli rozwiazanie
+		if(isCorrect(solution, state)){
+			show();
+		}
+	}
+	function removeDroppable(items){
+		items.forEach((item) => {
+        item.setAttribute("ondrop", "");
+        item.setAttribute("ondragover", "");
+        item.setAttribute("draggable", "false");
+        item.setAttribute("ondragstart", "");
+        item.setAttribute("ondragend", "");
+    })
+	}
+	function show(){
+		document.getElementById('wygrana').innerText = "Brawo, wygrana!";
+		document.getElementById('message').classList.remove("hide");
+	}
+	</script>
+
+</head>
+
+<body onload="setUp()">
+	<h1>Gra w Puzzle</h1>
+	<div id="message" class="hide">
+		<h1 id = "wygrana"> </h1>
+	</div>
+    <div id="container">
+        <ul>
+            <li class="list"></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+        </ul>
+    </div>
+	<script>
+		var ul = document.querySelectorAll('li');
+		const letters = ["A","B","C","D","E","F","G","H",""];
+		const solution = [["A","B","C"],["D","E","F"],["G","H",""]];
+		
+		function setUp(){
+			fillGrid(ul, letters);
+			setId(ul);
+			
+			//state.content = getState(ul);
+			state = getState1(ul);
+			
+			setDroppable(ul);
+			
+			setDraggable(ul);
+		}
+		
+		//const state = {};
+		//state.content = letters;
+		var state;
+		var emptyCell;
+		
+		//funkcje
+		function getEmptyCell(){
+			const emptyCellNumber = emptyCell;
+			if(emptyCellNumber < 3){
+				return [0, emptyCellNumber % 3];
+			}
+			else if(emptyCellNumber < 6){
+				return [1, emptyCellNumber % 3];
+			}
+			else return [2, emptyCellNumber % 3];
+		}
+		function getState1(items){
+			const wynik = [];
+			let licznik = 0;
+			for(let i = 0; i < 3; i++){
+				let tablica = [];
+				for(let j = 0; j < 3; j++){
+					tablica.push(items[licznik].innerText);
+					licznik = licznik + 1;
+				}
+				wynik.push(tablica);
+			}
+			return wynik;
+		}
+
+		
+		function setId(items){
+			for(let i = 0; i < items.length; i++){
+				items[i].setAttribute("id", `li${i}`)
+			}
+		}
+		function isSolvable(arr){
+			let number_of_inv = 0;
+			// get the number of inversions
+			for(let i =0; i<arr.length; i++){
+				// i picks the first element
+				for(let j = i+1; j < arr.length; j++) {
+					// check that an element exist at index i and j, then check that element at i > at j
+					if((arr[i] && arr[j]) && arr[i] > arr[j]) number_of_inv++;
+				}
+			}
+			// if the number of inversions is even
+			// the puzzle is solvable
+			return (number_of_inv % 2 == 0);
+		}
+		function fillGrid(items, letters){
+			let shuffled = shuffle(letters);
+			while(!isSolvable(shuffled)){
+				shuffled = shuffle(letters);
+			}
+			
+			items.forEach((item, i) => {
+				item.innerText = shuffled[i];
+				
+			})
+		}
+		function isCorrect(solution, content){
+			return (JSON.stringify(solution) == JSON.stringify(content));
+		}
+		function shuffle(letters){
+			let shuffled = letters.slice();
+			for(let i = 0; i < shuffled.length; i++){
+				let random = parseInt(Math.random()*shuffled.length);
+				let temp = shuffled[i];
+				shuffled[i] = shuffled[random];
+				shuffled[random] = temp;
+			}
+			return shuffled;
+		}
+		function setDroppable(items){
+			items.forEach((item, i) => {
+			if(!item.innerText) {
+				emptyCell = i;
+				console.log(i);
+				item.setAttribute("ondrop", "drop_handler(event);");
+				item.setAttribute("ondragover", "dragover_handler(event);");
+				item.setAttribute("class", "empty");
+				}
+			})
+        return;
+		}
+		function setDraggable(items){
+			const [row, col] = getEmptyCell();
+		    let left, right, top, bottom = null;
+			
+			console.log(state);
+			console.log(row + " " + col);
+			if(state[row][col-1]) left = state[row][col-1];
+			if(state[row][col+1]) right = state[row][col+1];
+
+			if(state[row-1] != undefined) top = state[row-1][col];
+			if(state[row+1] != undefined) bottom = state[row+1][col];
+			
+			items.forEach((item,i) => {
+			if(item.innerText == top || 
+            item.innerText == bottom || 
+            item.innerText == right ||
+			item.innerText == left) {
+				item.setAttribute("draggable", "true");
+				item.setAttribute("ondragstart", "dragstart_handler(event)");
+				item.setAttribute("ondragend", "dragend_handler(event)");
+				}
+			})
+		}
+	</script>
+</body>
+
+
+</html>
